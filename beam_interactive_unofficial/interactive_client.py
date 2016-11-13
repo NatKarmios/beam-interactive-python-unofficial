@@ -2,8 +2,11 @@ import asyncio
 from urllib.parse import urljoin
 
 from beam_interactive_unofficial.progress_update import ProgressUpdate
+from beam_interactive_unofficial.exceptions import *
 from beam_interactive_unofficial.beam_interactive_modified import start, proto, connection
+
 from requests import Session
+from requests.exceptions import ConnectionError
 
 URL = "https://beam.pro/api/v1/"
 
@@ -44,8 +47,18 @@ class BeamInteractiveClient:
 
     @asyncio.coroutine
     def _run(self):
-        self.login_response = self._login()  # type: dict
-        self.channel_id = self.login_response["channel"]["id"]
+        try:
+            self.login_response = self._login()  # type: dict
+        except (KeyError, TypeError):
+            raise InvalidAuthenticationError()
+
+        try:
+            self.channel_id = self.login_response["channel"]["id"]
+        except ConnectionError:
+            raise ConnectionFailedError("Please check your internet connection.")
+        except (KeyError, ValueError):
+            raise ConnectionFailedError(self.login_response["message"])
+
         self.data = self._join_interactive()  # type: dict
         self.connection = \
             yield from start(self.data["address"], self.channel_id, self.data["key"], self.loop)  # type: connection

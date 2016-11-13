@@ -1,4 +1,6 @@
-from beam_interactive_unofficial import BeamInteractiveClient, ProgressUpdate
+import sys
+
+from beam_interactive_unofficial import *
 
 """
 EXAMPLE USAGE
@@ -29,3 +31,10 @@ def on_error(error):
 
 client = BeamInteractiveClient(auth_details={"username": "USERNAME", "password": "PASSWORD"},
                                on_connect=on_connect, on_report=on_report, on_error=on_error)
+
+try:
+    client.start()
+except ConnectionFailedError as e:
+    print(str(e), file=sys.stderr)
+except InvalidAuthenticationError:
+    print("Your login details are incorrect!", file=sys.stderr)
