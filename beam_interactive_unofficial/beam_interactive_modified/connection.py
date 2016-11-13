@@ -96,11 +96,17 @@ class Connection():
         return self._read_queue.popleft()
 
     @asyncio.coroutine
-    def send(self, packet):
+    def send_coro(self, packet):
         """
         Sends a packet to the Interactive daemon over the wire.
         """
         yield from self._socket.send(encode(packet))
+
+    def send(self, packet):
+        """
+        Schedules a packet to be sent - for use outside coroutines
+        """
+        self._loop.create_task(self.send_coro(packet))
 
     def _do_close(self):
         """

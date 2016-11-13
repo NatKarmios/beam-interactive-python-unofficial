@@ -21,7 +21,7 @@ def on_report(report):
 
     progress = ProgressUpdate()
     progress.state = "TEST_STATE"
-    yield from client.send(progress)
+    client.send(progress)
 
 
 def on_error(error):

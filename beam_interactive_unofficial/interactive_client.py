@@ -7,7 +7,6 @@ from beam_interactive_unofficial.beam_interactive_modified import start, proto, 
 
 from requests import Session
 from requests.exceptions import ConnectionError
-
 URL = "https://beam.pro/api/v1/"
 
 
@@ -32,16 +31,14 @@ class BeamInteractiveClient:
         finally:
             self.loop.close()
 
-    @asyncio.coroutine
     def send(self, progress: ProgressUpdate):
         """Send a progress update to Beam.
-        Must be called inside an asyncio coroutine using 'yield from...'
         Only accepts an argument of type ProgressUpdate
         """
 
         assert isinstance(progress, ProgressUpdate), "'send' must be called with an object of type 'ProgressUpdate'"
         progress_probuf = progress.to_probuf()
-        yield from self.connection.send(progress_probuf)
+        self.connection.send(progress_probuf)
 
     # <editor-fold desc="Private Functions">
 
@@ -79,7 +76,7 @@ class BeamInteractiveClient:
         else:
             print("We got packet {} but didn't handle it!".format(packet_id))
 
-    # <editor-fold desc="connection helper functions">
+    # <editor-fold desc="helper functions">
     def _login(self):
         """Log into Beam via the API."""
         return self._session.post(self._build("/users/login"), data=self._auth_details).json()
