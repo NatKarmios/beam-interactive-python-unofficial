@@ -20,12 +20,27 @@ class BeamInteractiveClient:
         self._session = Session()
 
     def start(self):
+        """Start the connection to Beam."""
+
         self.loop = asyncio.get_event_loop()
 
         try:
             self.loop.run_until_complete(self._run())
         finally:
             self.loop.close()
+
+    @asyncio.coroutine
+    def send(self, progress: ProgressUpdate):
+        """Send a progress update to Beam.
+        Must be called inside an asyncio coroutine using 'yield from...'
+        Only accepts an argument of type ProgressUpdate
+        """
+
+        assert isinstance(progress, ProgressUpdate), "'send' must be called with an object of type 'ProgressUpdate'"
+        progress_probuf = progress.to_probuf()
+        yield from self.connection.send(progress_probuf)
+
+    # <editor-fold desc="Private Functions">
 
     @asyncio.coroutine
     def _run(self):
@@ -51,11 +66,6 @@ class BeamInteractiveClient:
         else:
             print("We got packet {} but didn't handle it!".format(packet_id))
 
-    @asyncio.coroutine
-    def send(self, progress: ProgressUpdate):
-        progress_probuf = progress.to_probuf()
-        yield from self.connection.send(progress_probuf)
-
     # <editor-fold desc="connection helper functions">
     def _login(self):
         """Log into Beam via the API."""
@@ -70,6 +80,8 @@ class BeamInteractiveClient:
         """Retrieve interactive connection information."""
         return self._session.get(self._build("/interactive/{channel}/robot").format(
             channel=self.channel_id)).json()
+    # </editor-fold>
+
     # </editor-fold>
 
     pass
