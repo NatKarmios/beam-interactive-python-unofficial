@@ -100,8 +100,6 @@ class Connection():
         """
         Sends a packet to the Interactive daemon over the wire.
         """
-        print("sending")
-        # print(packet)
         yield from self._socket.send(encode(packet))
 
     def _do_close(self):
