@@ -19,7 +19,7 @@ def start(address, channel, key, loop=None):
 
     socket = yield from websockets.connect(address+"/robot", loop=loop)
     conn = Connection(socket, loop)
-    yield from conn.send(_create_handshake(channel, key))
+    yield from conn.send_coro(_create_handshake(channel, key))
 
     return conn
 
