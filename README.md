@@ -6,4 +6,5 @@ This *should* fix the existing problem of being unable to send progress updates,
 I will attempt to document and possibly optimise this in the future, but for the moment, you can refer to `example.py` for a simple usage example.
 
 *Note: I am 17 and relatively inexperienced. As a result, most if not all of this code is probably riddled with bad practice.*<br>
-*Please do let me know of any possible improvements you may spot, and I will do my best to make them so.*
+*Please do let me know of any possible improvements you may spot, and I will do my best to make them so.*<br>
+*Feel free to contact me, I'm @NatKarmios on Twitter and Nat#1581 on Discord.*
