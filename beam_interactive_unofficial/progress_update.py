@@ -119,7 +119,7 @@ class ProgressUpdate:
         return update
 
     def _check_vars(self):
-        assert isinstance(self.state, str), \
+        assert isinstance(self.state, str) or self.state is None, \
             "'state' of ProgressUpdate must be of type 'str'"
         assert not any((not isinstance(i, TactileUpdate) for i in self.tactile_updates)), \
             "'tactile_updates' of ProgressUpdate must be a list of type 'TactileUpdate"
