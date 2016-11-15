@@ -22,6 +22,7 @@ class BeamInteractiveClient:
         }
         self._session = Session()
         self._on_disconnect = on_disconnect
+        self.state = None
 
     def start(self):
         """Start the connection to Beam."""
@@ -46,8 +47,15 @@ class BeamInteractiveClient:
         else:
             raise ValueError("Invalid data type - must be a ProgressUpdate, TactileUpdate, ScreenUpdate, dict or str.")
 
+        if progress.state is not None:
+            self.state = progress.state
         progress_probuf = progress.to_probuf()
         self.connection.send(progress_probuf)
+
+    def set_state(self, state):
+        progress = ProgressUpdate()
+        progress.state = str(state)
+        self.send(state)
 
     # <editor-fold desc="Private Functions">
 
