@@ -3,14 +3,14 @@ import inspect
 
 from math import pi
 from typing import List
+from json import loads as load_json
 
-from copy import deepcopy
 from beam_interactive_unofficial.beam_interactive_modified import proto
 
 
 # <editor-fold desc="Helper Functions">
 
-def accepts(*types, none_accepted=True):
+def _accepts(*types, none_accepted=True):
     def check_accepts(f):
         assert len(types) == len(inspect.signature(f).parameters)
 
@@ -50,13 +50,13 @@ class ProgressUpdate:
                 tactile.cooldown = tactile_update.cooldown
 
             if tactile_update.fired is not None:
-                tactile.update = tactile_update.fired
+                tactile.fired = tactile_update.fired
 
             if tactile_update.progress is not None:
-                tactile.update = tactile_update.progress
+                tactile.progress = tactile_update.progress
 
             if tactile_update.disabled is not None:
-                tactile.update = tactile_update.disabled
+                tactile.disabled = tactile_update.disabled
 
         for joystick_update in self.joystick_updates:
             joystick = progress.joystick.add()
@@ -66,22 +66,49 @@ class ProgressUpdate:
                 joystick.id = joystick_update.angle
 
             if joystick_update.intensity is not None:
-                joystick.id = joystick_update.intensity
+                joystick.intensity = joystick_update.intensity
 
             if joystick_update.disabled is not None:
-                joystick.id = joystick_update.disabled
+                joystick.disabled = joystick_update.disabled
 
         for screen_update in self.screen_updates:
             screen = progress.screen.add()
             screen.id = screen_update.id
 
-            if screen_update.clicks is not None:
-                screen.clicks = deepcopy(screen_update.clicks)
+            for click_dict in screen_update.clicks:
+                click = screen.clicks.add()
+                click.intensity = click_dict["intensity"]
+                click.coordinate.x = click_dict["coordinate"]["x"]
+                click.coordinate.y = click_dict["coordinate"]["y"]
 
             if screen_update.disabled is not None:
                 screen.disabled = screen_update.disabled
 
         return progress
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        update = cls()
+        if "state" in data:
+            update.state = str(data["state"])
+        if "tactile" in data:
+            assert isinstance(data["tactile"], list), "'tactile' in progress update data must be a list!"
+            for tactile in data["tactile"]:
+                update.tactile_updates.append(TactileUpdate.from_dict(tactile))
+        if "joystick" in data:
+            assert isinstance(data["joystick"], list), "'joystick' in progress update data must be a list!"
+            for joystick in data["joystick"]:
+                update.joystick_updates.append(JoystickUpdate.from_dict(joystick))
+        if "screen" in data:
+            assert isinstance(data["screen"], list), "'screen' in progress update data must be a list!"
+            for screen in data["screen"]:
+                update.screen_updates.append(ScreenUpdate.from_dict(screen))
+
+        return update
+
+    @classmethod
+    def from_json(cls, json: str):
+        return cls.from_dict(load_json(json))
 
     def _check_vars(self):
         assert isinstance(self.state, str), \
@@ -125,6 +152,26 @@ class TactileUpdate:
         assert (isinstance(self.disabled, bool)) or self.disabled is None, \
             "'disabled' of TactileUpdate must be of type 'bool'"
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        tactile = cls()
+        assert "id" in data, "tactile update must have an id!"
+        tactile.id = data["id"]
+        if "cooldown" in data:
+            tactile.cooldown = data["cooldown"]
+        if "fired" in data:
+            tactile.fired = data["fired"]
+        if "progress" in data:
+            tactile.progress = data["progress"]
+        if "disabled" in data:
+            tactile.disabled = data["disabled"]
+
+        return tactile
+
+    @classmethod
+    def from_json(cls, json: str):
+        return cls.from_dict(load_json(json))
+
 
 class JoystickUpdate:
     def __init__(self, id_=None, angle=None, intensity=None, disabled=None):
@@ -143,26 +190,50 @@ class JoystickUpdate:
         assert (isinstance(self.disabled, bool)) or self.disabled is None, \
             "'disabled' of JoystickUpdate must be of type 'bool'"
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        joystick = cls()
+        assert "id" in data, "joystick update must have an id!"
+        if "angle" in data:
+            joystick.angle = data["angle"]
+        if "intensity" in data:
+            joystick.intensity = data["intensity"]
+        if "disabled" in data:
+            joystick.disabled = data["disabled"]
+
+    @classmethod
+    def from_json(cls, json: str):
+        return cls.from_dict(load_json(json))
+
 
 class ScreenUpdate:
     def __init__(self, id_=None, clicks=None, disabled=None):
-        if clicks is None:
-            clicks = []
-
         self.id = id_
-        self.clicks = clicks
+        self.clicks = clicks  # type: List[dict]
         self.disabled = disabled
+
+        if self.clicks is None:
+            self.clicks = []
 
     def check(self):
         assert isinstance(self.id, int) and self.id >= 0, \
             "'id' of ScreenUpdate must be of type 'int' and be 0 or greater"
-        assert (isinstance(self.clicks, list)
-                and not any((not (isinstance(i, tuple) and len(i) == 2 and
-                                  isinstance(i[0], float) and isinstance(i[1], float))
-                             for i in self.clicks))) or self.clicks is None, \
-            "'clicks' of ScreenUpdate must be a list of tuples of type (float, float)"
+        assert (isinstance(self.clicks, list) and not any(not isinstance(click, dict) for click in self.clicks)), \
+            "'clicks' of ScreenUpdate must be a list of dicts!"
         assert (isinstance(self.disabled, bool)) or self.disabled is None, \
             "'disabled' of ScreenUpdate must be of type 'bool'"
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        screen = cls()
+        assert "id" in data, "screen update must have an id!"
+        screen.id = data["id"]
+        if "clicks" in data:
+            screen.clicks = data["clicks"]
+
+    @classmethod
+    def from_json(cls, json: str):
+        return cls.from_dict(load_json(json))
 
     pass
 

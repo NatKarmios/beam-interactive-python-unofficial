@@ -29,8 +29,13 @@ def on_error(error):
     print("Error!")
     print(error.message)
 
-client = BeamInteractiveClient(auth_details={"username": "USERNAME", "password": "PASSWORD"},
-                               on_connect=on_connect, on_report=on_report, on_error=on_error)
+
+def on_disconnect():
+    print("Disconnected from Beam.")
+
+
+client = BeamInteractiveClient(auth_details={"username": "USERNAME", "password": "PASSWORD"}, on_connect=on_connect,
+                               on_report=on_report, on_error=on_error, on_disconnect=on_disconnect)
 
 try:
     client.start()

@@ -9,12 +9,11 @@ from requests import Session
 from requests.exceptions import ConnectionError
 URL = "https://beam.pro/api/v1/"
 
-BLANK_FUNC = lambda x: None
-
 
 # noinspection PyAttributeOutsideInit
 class BeamInteractiveClient:
-    def __init__(self, auth_details, on_connect=lambda x: None, on_report=lambda x: None, on_error=lambda x: None):
+    def __init__(self, auth_details, on_connect=lambda x: None, on_report=lambda x: None, on_error=lambda x: None,
+                 on_disconnect=lambda x: None):
         self._auth_details = auth_details
         self._handlers = {
             proto.id.handshake_ack: asyncio.coroutine(on_connect),
@@ -22,6 +21,7 @@ class BeamInteractiveClient:
             proto.id.error: asyncio.coroutine(on_error)
         }
         self._session = Session()
+        self._on_disconnect = on_disconnect
 
     def start(self):
         """Start the connection to Beam."""
@@ -65,6 +65,7 @@ class BeamInteractiveClient:
             yield from self._handle_packet(self.connection.get_packet())
 
         self.connection.close()
+        self._on_disconnect()
 
     @asyncio.coroutine
     def _handle_packet(self, packet):

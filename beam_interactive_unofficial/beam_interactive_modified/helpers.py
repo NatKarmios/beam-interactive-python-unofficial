@@ -18,6 +18,7 @@ def start(address, channel, key, loop=None):
         loop = asyncio.get_event_loop()
 
     socket = yield from websockets.connect(address+"/robot", loop=loop)
+
     conn = Connection(socket, loop)
     yield from conn.send_coro(_create_handshake(channel, key))
 
