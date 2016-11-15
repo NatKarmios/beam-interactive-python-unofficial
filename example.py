@@ -19,9 +19,7 @@ def on_report(report):
         if tactile.pressFrequency > 0:
             print(str(tactile.id) + " : " + str(int(tactile.pressFrequency)))
 
-    progress = ProgressUpdate()
-    progress.state = "TEST_STATE"
-    client.send(progress)
+    client.set_state("TEST_STATE")
 
 
 def on_error(error):

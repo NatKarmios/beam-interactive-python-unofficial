@@ -23,6 +23,7 @@ class BeamInteractiveClient:
         self._session = Session()
         self._on_disconnect = on_disconnect
         self.state = None
+        self._started = False
 
     def start(self):
         """Start the connection to Beam."""
@@ -36,6 +37,8 @@ class BeamInteractiveClient:
 
     def send(self, update: (ProgressUpdate, JoystickUpdate, TactileUpdate, ScreenUpdate, dict, str)):
         """Send a progress update to Beam."""
+        self._check_started()
+
         if isinstance(update, ProgressUpdate):
             progress = update
         elif isinstance(update, (JoystickUpdate, TactileUpdate, ScreenUpdate)):
@@ -76,6 +79,7 @@ class BeamInteractiveClient:
         self.data = self._join_interactive()  # type: dict
         self.connection = \
             yield from start(self.data["address"], self.channel_id, self.data["key"], self.loop)  # type: connection
+        self._started = True
         while (yield from self.connection.wait_message()):
             yield from self._handle_packet(self.connection.get_packet())
 
@@ -108,6 +112,10 @@ class BeamInteractiveClient:
         """Retrieve interactive connection information."""
         return self._session.get(self._build("/interactive/{channel}/robot").format(
             channel=self.channel_id)).json()
+
+    def _check_started(self):
+        if not self._started:
+            raise ClientNotConnectedError()
     # </editor-fold>
 
     # </editor-fold>
