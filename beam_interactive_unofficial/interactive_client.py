@@ -60,6 +60,10 @@ class BeamInteractiveClient:
         progress.state = str(state)
         self.send(state)
 
+    def fire_tactile(self, tactile_id):
+        self.send(TactileUpdate(id_=tactile_id, fired=True))
+        self.send(TactileUpdate(id_=tactile_id, fired=False))
+
     # <editor-fold desc="Private Functions">
 
     @asyncio.coroutine

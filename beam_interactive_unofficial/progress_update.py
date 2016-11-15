@@ -149,30 +149,35 @@ class TactileUpdate:
         self.disabled = disabled
 
     def check(self):
-        assert isinstance(self.id, int) and self.id >= 0, \
-            "'id' of TactileUpdate must be of type 'int' and be 0 or greater"
-        assert (isinstance(self.cooldown, int) and self.cooldown >= 0) or self.cooldown is None, \
-            "'cooldown' of TactileUpdate must be of type 'int' and be 0 or greater"
-        assert (isinstance(self.fired, bool)) or self.fired is None, \
-            "'fired' of TactileUpdate must be of type 'bool'"
-        assert (isinstance(self.progress, float) and 0 <= self.progress <= 1) or self.progress is None, \
-            "'progress' of TactileUpdate must be of type 'float' and be between 0 and 1"
-        assert (isinstance(self.disabled, bool)) or self.disabled is None, \
-            "'disabled' of TactileUpdate must be of type 'bool'"
+        self.id = int(self.id)
+        assert self.id >= 0, \
+            "'id' of TactileUpdate must  be 0 or greater"
+        
+        self.cooldown = int(self.cooldown) if self.cooldown is not None else None
+        assert self.cooldown >= 0 or self.cooldown is None, \
+            "'cooldown' of TactileUpdate must be 0 or greater"
+
+        self.fired = bool(self.fired) if self.fired is not None else None
+
+        self.progress = float(self.progress) if self.progress is not None else None
+        assert 0 <= self.progress <= 1 or self.progress is None, \
+            "'progress' of TactileUpdate must be between 0 and 1"
+
+        self.disabled = bool(self.disabled) if self.disabled is not None else None
 
     @classmethod
     def from_dict(cls, data: dict):
         tactile = cls()
         assert "id" in data, "tactile update must have an id!"
-        tactile.id = data["id"]
+        tactile.id = int(data["id"])
         if "cooldown" in data:
-            tactile.cooldown = data["cooldown"]
+            tactile.cooldown = int(data["cooldown"])
         if "fired" in data:
-            tactile.fired = data["fired"]
+            tactile.fired = bool(data["fired"])
         if "progress" in data:
-            tactile.progress = data["progress"]
+            tactile.progress = float(data["progress"])
         if "disabled" in data:
-            tactile.disabled = data["disabled"]
+            tactile.disabled = bool(data["disabled"])
 
         return tactile
 
@@ -194,25 +199,31 @@ class JoystickUpdate:
         self.disabled = disabled
 
     def check(self):
-        assert isinstance(self.id, int) and self.id >= 0, \
-            "'id' of JoystickUpdate must be of type 'int' and be 0 or greater"
-        assert (isinstance(self.angle, float) and 0 <= self.angle <= 2 * pi) or self.angle is None, \
-            "'angle' of JoystickUpdate must be of type 'float' and be between 0 and 2π"
-        assert (isinstance(self.intensity, float) and self.intensity >= 0) or self.intensity is None, \
-            "'intensity' of JoystickUpdate must be of type 'float' and be 0 or greater"
-        assert (isinstance(self.disabled, bool)) or self.disabled is None, \
-            "'disabled' of JoystickUpdate must be of type 'bool'"
+        self.id = int(self.id)
+        assert self.id >= 0, \
+            "'id' of JoystickUpdate must be 0 or greater"
+        
+        self.angle = float(self.angle) if self.angle is not None else None
+        assert 0 <= self.angle <= 2 * pi or self.angle is None, \
+            "'angle' of JoystickUpdate must be between 0 and 2π"
+        
+        self.intensity = float(self.intensity) if self.intensity is not None else None
+        assert self.intensity >= 0 or self.intensity is None, \
+            "'intensity' of JoystickUpdate must be 0 or greater"
+
+        self.disabled = bool(self.disabled) if self.disabled is not None else None
 
     @classmethod
     def from_dict(cls, data: dict):
         joystick = cls()
         assert "id" in data, "joystick update must have an id!"
+        joystick.id = int(data["id"])
         if "angle" in data:
-            joystick.angle = data["angle"]
+            joystick.angle = float(data["angle"])
         if "intensity" in data:
-            joystick.intensity = data["intensity"]
+            joystick.intensity = float(data["intensity"])
         if "disabled" in data:
-            joystick.disabled = data["disabled"]
+            joystick.disabled = bool(data["disabled"])
 
     @classmethod
     def from_json(cls, json: str):
@@ -234,12 +245,16 @@ class ScreenUpdate:
             self.clicks = []
 
     def check(self):
-        assert isinstance(self.id, int) and self.id >= 0, \
+        self.id = int(self.id)
+        assert self.id >= 0, \
             "'id' of ScreenUpdate must be of type 'int' and be 0 or greater"
-        assert (isinstance(self.clicks, list) and not any(not isinstance(click, dict) for click in self.clicks)), \
-            "'clicks' of ScreenUpdate must be a list of dicts!"
-        assert (isinstance(self.disabled, bool)) or self.disabled is None, \
-            "'disabled' of ScreenUpdate must be of type 'bool'"
+
+        for click in self.clicks:
+            click["intensity"] = float(click["intensity"])
+            click["coordinate"]["x"] = float(click["coordinate"]["x"])
+            click["coordinate"]["y"] = float(click["coordinate"]["y"])
+
+        self.disabled = bool(self.disabled) if self.disabled is not None else None
 
     @classmethod
     def from_dict(cls, data: dict):
