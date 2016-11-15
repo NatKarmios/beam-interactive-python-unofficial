@@ -172,6 +172,11 @@ class TactileUpdate:
     def from_json(cls, json: str):
         return cls.from_dict(load_json(json))
 
+    def wrap(self)-> ProgressUpdate:
+        update = ProgressUpdate()
+        update.tactile_updates.append(self)
+        return update
+
 
 class JoystickUpdate:
     def __init__(self, id_=None, angle=None, intensity=None, disabled=None):
@@ -205,6 +210,11 @@ class JoystickUpdate:
     def from_json(cls, json: str):
         return cls.from_dict(load_json(json))
 
+    def wrap(self)-> ProgressUpdate:
+        update = ProgressUpdate()
+        update.joystick_updates.append(self)
+        return update
+
 
 class ScreenUpdate:
     def __init__(self, id_=None, clicks=None, disabled=None):
@@ -235,6 +245,9 @@ class ScreenUpdate:
     def from_json(cls, json: str):
         return cls.from_dict(load_json(json))
 
-    pass
+    def wrap(self)-> ProgressUpdate:
+        update = ProgressUpdate()
+        update.screen_updates.append(self)
+        return update
 
 # </editor-fold>

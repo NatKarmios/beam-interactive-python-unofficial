@@ -1,7 +1,7 @@
 import asyncio
 from urllib.parse import urljoin
 
-from beam_interactive_unofficial.progress_update import ProgressUpdate
+from beam_interactive_unofficial.progress_update import *
 from beam_interactive_unofficial.exceptions import *
 from beam_interactive_unofficial.beam_interactive_modified import start, proto, connection
 
@@ -33,12 +33,19 @@ class BeamInteractiveClient:
         finally:
             self.loop.close()
 
-    def send(self, progress: ProgressUpdate):
-        """Send a progress update to Beam.
-        Only accepts an argument of type ProgressUpdate
-        """
+    def send(self, update: (ProgressUpdate, JoystickUpdate, TactileUpdate, ScreenUpdate, dict, str)):
+        """Send a progress update to Beam."""
+        if isinstance(update, ProgressUpdate):
+            progress = update
+        elif isinstance(update, (JoystickUpdate, TactileUpdate, ScreenUpdate)):
+            progress = update.wrap()
+        elif isinstance(update, dict):
+            progress = ProgressUpdate.from_dict(update)
+        elif isinstance(update, str):
+            progress = ProgressUpdate.from_json(update)
+        else:
+            raise ValueError("Invalid data type - must be a ProgressUpdate, TactileUpdate, ScreenUpdate, dict or str.")
 
-        assert isinstance(progress, ProgressUpdate), "'send' must be called with an object of type 'ProgressUpdate'"
         progress_probuf = progress.to_probuf()
         self.connection.send(progress_probuf)
 
