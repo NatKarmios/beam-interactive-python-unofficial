@@ -110,14 +110,6 @@ class ProgressUpdate:
     def from_json(cls, json: str):
         return cls.from_dict(load_json(json))
 
-    @classmethod
-    def tactile_cooldown(cls, length: int, num_buttons: int):
-        update = cls()
-        for i in range(num_buttons):
-            update.tactile_updates.append(TactileUpdate(id_=i, cooldown=length))
-
-        return update
-
     def _check_vars(self):
         assert isinstance(self.state, str) or self.state is None, \
             "'state' of ProgressUpdate must be of type 'str'"
@@ -154,13 +146,13 @@ class TactileUpdate:
             "'id' of TactileUpdate must  be 0 or greater"
         
         self.cooldown = int(self.cooldown) if self.cooldown is not None else None
-        assert self.cooldown >= 0 or self.cooldown is None, \
+        assert self.cooldown is None or self.cooldown >= 0, \
             "'cooldown' of TactileUpdate must be 0 or greater"
 
         self.fired = bool(self.fired) if self.fired is not None else None
 
         self.progress = float(self.progress) if self.progress is not None else None
-        assert 0 <= self.progress <= 1 or self.progress is None, \
+        assert self.progress is None or 0 <= self.progress <= 1, \
             "'progress' of TactileUpdate must be between 0 and 1"
 
         self.disabled = bool(self.disabled) if self.disabled is not None else None
@@ -204,11 +196,11 @@ class JoystickUpdate:
             "'id' of JoystickUpdate must be 0 or greater"
         
         self.angle = float(self.angle) if self.angle is not None else None
-        assert 0 <= self.angle <= 2 * pi or self.angle is None, \
+        assert self.angle is None or 0 <= self.angle <= 2 * pi, \
             "'angle' of JoystickUpdate must be between 0 and 2π"
         
         self.intensity = float(self.intensity) if self.intensity is not None else None
-        assert self.intensity >= 0 or self.intensity is None, \
+        assert self.intensity is None or self.intensity >= 0, \
             "'intensity' of JoystickUpdate must be 0 or greater"
 
         self.disabled = bool(self.disabled) if self.disabled is not None else None

@@ -24,6 +24,7 @@ class BeamInteractiveClient:
         self._on_disconnect = on_disconnect
         self.state = None
         self._started = False
+        self._num_buttons = None
 
     def start(self):
         """Start the connection to Beam."""
@@ -60,9 +61,29 @@ class BeamInteractiveClient:
         progress.state = str(state)
         self.send(state)
 
-    def fire_tactile(self, tactile_id):
+    def tactile_fire(self, tactile_id=None):
+        if tactile_id is None:
+            update_on = ProgressUpdate()
+            update_off = ProgressUpdate()
+            for i in range(self._num_buttons):
+                update_on.tactile_updates.append(TactileUpdate(id_=i, fired=True))
+                update_off.tactile_updates.append(TactileUpdate(id_=i, fired=False))
+            self.send(update_on)
+            self.send(update_off)
+            return
+
         self.send(TactileUpdate(id_=tactile_id, fired=True))
         self.send(TactileUpdate(id_=tactile_id, fired=False))
+
+    def tactile_cooldown(self, length, tactile_id=None):
+        if tactile_id is None:
+            update = ProgressUpdate()
+            for i in range(self._num_buttons):
+                update.tactile_updates.append(TactileUpdate(id_=i, cooldown=length))
+            self.send(update)
+            return
+
+        self.send(TactileUpdate(id_=tactile_id, cooldown=length))
 
     # <editor-fold desc="Private Functions">
 
@@ -94,6 +115,9 @@ class BeamInteractiveClient:
     def _handle_packet(self, packet):
         decoded, _ = packet
         packet_id = proto.id.get_packet_id(decoded)
+
+        if packet_id == proto.id.report:
+            self._num_buttons = len(decoded.tactile)
 
         if packet_id in self._handlers:
             yield from self._handlers[packet_id](decoded)
