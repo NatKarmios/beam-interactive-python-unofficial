@@ -110,6 +110,14 @@ class ProgressUpdate:
     def from_json(cls, json: str):
         return cls.from_dict(load_json(json))
 
+    @classmethod
+    def tactile_cooldown(cls, length: int, num_buttons: int):
+        update = cls()
+        for i in range(num_buttons):
+            update.tactile_updates.append(TactileUpdate(id_=i, cooldown=length))
+
+        return update
+
     def _check_vars(self):
         assert isinstance(self.state, str), \
             "'state' of ProgressUpdate must be of type 'str'"
