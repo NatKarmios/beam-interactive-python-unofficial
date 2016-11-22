@@ -59,7 +59,7 @@ class BeamInteractiveClient:
     def set_state(self, state):
         progress = ProgressUpdate()
         progress.state = str(state)
-        self.send(state)
+        self.send(progress)
 
     def tactile_fire(self, tactile_id=None):
         if tactile_id is None:
