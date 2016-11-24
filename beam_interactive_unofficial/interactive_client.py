@@ -85,9 +85,8 @@ class BeamInteractiveClient:
         self.send(progress)
 
     def tactile_fire(self, tactile_id=None):
+        update_on, update_off = ProgressUpdate(), ProgressUpdate()
         if tactile_id is None:
-            update_on = ProgressUpdate()
-            update_off = ProgressUpdate()
             for i in range(self._num_buttons):
                 update_on.tactile_updates.append(TactileUpdate(id_=i, fired=True))
                 update_off.tactile_updates.append(TactileUpdate(id_=i, fired=False))
@@ -95,23 +94,27 @@ class BeamInteractiveClient:
             self.send(update_off)
             return
 
-        self.send(TactileUpdate(id_=tactile_id, fired=True))
-        self.send(TactileUpdate(id_=tactile_id, fired=False))
+        try:
+            for id_ in tactile_id:
+                update_on.tactile_updates.append(TactileUpdate(id_=id_, fired=True))
+                update_off.tactile_updates.append(TactileUpdate(id_=id_, fired=False))
+        except TypeError:
+            self.send(TactileUpdate(id_=tactile_id, fired=True))
+            self.send(TactileUpdate(id_=tactile_id, fired=False))
 
     def tactile_cooldown(self, length, tactile_id=None):
         if tactile_id is None:
-            update = ProgressUpdate()
+            progress = ProgressUpdate()
             for i in range(self._num_buttons):
-                update.tactile_updates.append(TactileUpdate(id_=i, cooldown=length))
-            self.send(update)
+                progress.tactile_updates.append(TactileUpdate(id_=i, cooldown=length))
+            self.send(progress)
             return
 
         try:
             progress = ProgressUpdate()
             for id_ in tactile_id:
-                progress.tactile_updates.append(TactileUpdate(id_, length))
+                progress.tactile_updates.append(TactileUpdate(id_=id_, cooldown=length))
             self.send(progress)
-
         except TypeError:
             self.send(TactileUpdate(id_=tactile_id, cooldown=length))
 
