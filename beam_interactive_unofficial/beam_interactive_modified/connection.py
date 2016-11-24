@@ -56,7 +56,9 @@ class Connection():
         """
         while True:
             try:
-                data = yield from self._socket.recv()
+                data = yield from asyncio.wait_for(self._socket.recv(), 1)
+            except asyncio.TimeoutError:
+                continue
             except asyncio.CancelledError:
                 break
             except ConnectionClosed:

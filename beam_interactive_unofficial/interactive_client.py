@@ -7,34 +7,57 @@ from beam_interactive_unofficial.beam_interactive_modified import start, proto, 
 
 from requests import Session
 from requests.exceptions import ConnectionError
+
 URL = "https://beam.pro/api/v1/"
 
 
 # noinspection PyAttributeOutsideInit
 class BeamInteractiveClient:
-    def __init__(self, auth_details, on_connect=lambda x: None, on_report=lambda x: None, on_error=lambda x: None,
-                 on_disconnect=lambda x: None):
+    def __init__(self, auth_details, timeout: int, on_connect=lambda x: None, on_report=lambda x: None,
+                 on_error=lambda x: None, auto_reconnect=False, max_reconnect_attempts=-1, reconnect_delay=5):
+
+        self._on_connect, self._on_report, self._on_error = on_connect, on_report, on_error
+        self._max_reconn, self._auto_reconnect = max_reconnect_attempts, auto_reconnect
+        self._reconnect_delay = reconnect_delay
         self._auth_details = auth_details
+        self._timeout = timeout
         self._handlers = {
             proto.id.handshake_ack: asyncio.coroutine(on_connect),
             proto.id.report: asyncio.coroutine(on_report),
             proto.id.error: asyncio.coroutine(on_error)
         }
+
+    def start(self, _attempt=0, _reconnect=False):
+        """Start the connection to Beam."""
         self._session = Session()
-        self._on_disconnect = on_disconnect
+
         self.state = None
         self._started = False
         self._num_buttons = None
 
-    def start(self):
-        """Start the connection to Beam."""
-
-        self.loop = asyncio.get_event_loop()
-
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        e = None
         try:
-            self.loop.run_until_complete(self._run())
+            e = self.loop.run_until_complete(asyncio.gather(
+                self._run(delay=(self._reconnect_delay if _reconnect else None)), return_exceptions=True))
         finally:
+            tasks = asyncio.gather(*asyncio.Task.all_tasks(), return_exceptions=True)
+            tasks.cancel()
+            self.loop.run_until_complete(tasks)
             self.loop.close()
+
+            if e is not None:
+                if isinstance(e[0], asyncio.TimeoutError):
+                    print("Disconnected from Beam!")
+                    self.start(_attempt=1, _reconnect=True)
+                if isinstance(e[0], ConnectionError):
+                    if _attempt == self._max_reconn or not _reconnect or not self._auto_reconnect:
+                        raise ConnectionFailedError("Failed to {}connect to Beam{}!"
+                                                    .format("re" if _reconnect else "",
+                                                            " after {} attempts"
+                                                            .format(self._max_reconn)) if _reconnect else "")
+                    self.start(_attempt=_attempt + 1, _reconnect=True)
 
     def send(self, update: (ProgressUpdate, JoystickUpdate, TactileUpdate, ScreenUpdate, dict, str)):
         """Send a progress update to Beam."""
@@ -83,12 +106,22 @@ class BeamInteractiveClient:
             self.send(update)
             return
 
-        self.send(TactileUpdate(id_=tactile_id, cooldown=length))
+        try:
+            progress = ProgressUpdate()
+            for id_ in tactile_id:
+                progress.tactile_updates.append(TactileUpdate(id_, length))
+            self.send(progress)
+
+        except TypeError:
+            self.send(TactileUpdate(id_=tactile_id, cooldown=length))
 
     # <editor-fold desc="Private Functions">
 
     @asyncio.coroutine
-    def _run(self):
+    def _run(self, delay=None):
+        if delay is not None:
+            print("Couldn't connect to Beam - trying again in 5 seconds...")
+            yield from asyncio.sleep(delay)
         try:
             self.login_response = self._login()  # type: dict
         except (KeyError, TypeError):
@@ -105,11 +138,8 @@ class BeamInteractiveClient:
         self.connection = \
             yield from start(self.data["address"], self.channel_id, self.data["key"], self.loop)  # type: connection
         self._started = True
-        while (yield from self.connection.wait_message()):
+        while (yield from asyncio.wait_for(self.connection.wait_message(), self._timeout)):
             yield from self._handle_packet(self.connection.get_packet())
-
-        self.connection.close()
-        self._on_disconnect()
 
     @asyncio.coroutine
     def _handle_packet(self, packet):
@@ -144,6 +174,7 @@ class BeamInteractiveClient:
     def _check_started(self):
         if not self._started:
             raise ClientNotConnectedError()
+
     # </editor-fold>
 
     # </editor-fold>

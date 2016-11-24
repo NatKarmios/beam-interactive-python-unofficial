@@ -28,12 +28,10 @@ def on_error(error):
     print(error.message)
 
 
-def on_disconnect():
-    print("Disconnected from Beam.")
-
-
-client = BeamInteractiveClient(auth_details={"username": "USERNAME", "password": "PASSWORD"}, on_connect=on_connect,
-                               on_report=on_report, on_error=on_error, on_disconnect=on_disconnect)
+# Note: all of these parameters *except* `auth_details` and `timeout` are OPTIONAL.
+client = BeamInteractiveClient(auth_details={"username": "USERNAME", "password": "PASSWORD"}, timeout=1,
+                               on_connect=on_connect, on_report=on_report, on_error=on_error,
+                               auto_reconnect=True, max_reconnect_attempts=10, reconnect_delay=3)
 
 try:
     client.start()
