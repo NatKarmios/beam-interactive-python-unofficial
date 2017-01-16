@@ -1,11 +1,12 @@
 import asyncio
 from urllib.parse import urljoin
 
+import requests
+
 from beam_interactive_unofficial.progress_update import *
 from beam_interactive_unofficial.exceptions import *
 from beam_interactive_unofficial.beam_interactive_modified import start, proto, connection
 
-from requests import Session
 from requests.exceptions import ConnectionError
 
 URL = "https://beam.pro/api/v1/"
@@ -29,7 +30,6 @@ class BeamInteractiveClient:
 
     def start(self, _attempt=0, _reconnect=False):
         """Start the connection to Beam."""
-        self._session = Session()
 
         self.state = None
         self._started = False
@@ -162,8 +162,8 @@ class BeamInteractiveClient:
     # <editor-fold desc="helper functions">
     def _get_user_data(self):
         """Log into Beam via the API."""
-        return self._session.get(self._build("/users/current"),
-                                 headers={"Authorization": ("Bearer " + self._oauth)}).json()
+        return requests.get(self._build("/users/current"),
+                            headers={"Authorization": ("Bearer " + self._oauth)}).json()
 
     @staticmethod
     def _build(endpoint):
@@ -172,8 +172,8 @@ class BeamInteractiveClient:
 
     def _join_interactive(self):
         """Retrieve interactive connection information."""
-        return self._session.get(self._build("/interactive/{channel}/robot").format(
-            channel=self.channel_id)).json()
+        return requests.get(self._build("/interactive/{channel}/robot").format(
+            channel=self.channel_id), headers={"Authorization": ("Bearer " + self._oauth)}).json()
 
     def _check_started(self):
         if not self._started:
