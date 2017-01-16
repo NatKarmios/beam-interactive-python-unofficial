@@ -29,7 +29,7 @@ def on_error(error):
 
 
 # Note: all of these parameters *except* `auth_details` and `timeout` are OPTIONAL.
-client = BeamInteractiveClient(auth_details={"username": "USERNAME", "password": "PASSWORD"}, timeout=1,
+client = BeamInteractiveClient(oauth="OauthTokenGoesHere", timeout=1,
                                on_connect=on_connect, on_report=on_report, on_error=on_error,
                                auto_reconnect=True, max_reconnect_attempts=10, reconnect_delay=3)
 

@@ -13,13 +13,13 @@ URL = "https://beam.pro/api/v1/"
 
 # noinspection PyAttributeOutsideInit
 class BeamInteractiveClient:
-    def __init__(self, auth_details, timeout: int, on_connect=lambda x: None, on_report=lambda x: None,
+    def __init__(self, oauth, timeout: int, on_connect=lambda x: None, on_report=lambda x: None,
                  on_error=lambda x: None, auto_reconnect=False, max_reconnect_attempts=-1, reconnect_delay=5):
 
         self._on_connect, self._on_report, self._on_error = on_connect, on_report, on_error
         self._max_reconn, self._auto_reconnect = max_reconnect_attempts, auto_reconnect
         self._reconnect_delay = reconnect_delay
-        self._auth_details = auth_details
+        self._oauth = oauth
         self._timeout = timeout
         self._handlers = {
             proto.id.handshake_ack: asyncio.coroutine(on_connect),
@@ -126,16 +126,16 @@ class BeamInteractiveClient:
             print("Couldn't connect to Beam - trying again in 5 seconds...")
             yield from asyncio.sleep(delay)
         try:
-            self.login_response = self._login()  # type: dict
+            self.user_data = self._get_user_data()  # type: dict
         except (KeyError, TypeError):
             raise InvalidAuthenticationError()
 
         try:
-            self.channel_id = self.login_response["channel"]["id"]
+            self.channel_id = self.user_data["channel"]["id"]
         except ConnectionError:
             raise ConnectionFailedError("Please check your internet connection.")
         except (KeyError, ValueError):
-            raise ConnectionFailedError(self.login_response["message"])
+            raise ConnectionFailedError(self.user_data["message"])
 
         self.data = self._join_interactive()  # type: dict
         self.connection = \
@@ -160,9 +160,10 @@ class BeamInteractiveClient:
             print("We got packet {} but didn't handle it!".format(packet_id))
 
     # <editor-fold desc="helper functions">
-    def _login(self):
+    def _get_user_data(self):
         """Log into Beam via the API."""
-        return self._session.post(self._build("/users/login"), data=self._auth_details).json()
+        return self._session.get(self._build("/users/current"),
+                                 headers={"Authorization": ("Bearer " + self._oauth)}).json()
 
     @staticmethod
     def _build(endpoint):
