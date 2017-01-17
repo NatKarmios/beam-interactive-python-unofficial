@@ -14,7 +14,7 @@ URL = "https://beam.pro/api/v1/"
 
 # noinspection PyAttributeOutsideInit
 class BeamInteractiveClient:
-    def __init__(self, oauth, timeout: int, on_connect=lambda x: None, on_report=lambda x: None,
+    def __init__(self, oauth, timeout: int, on_connect=lambda x: None, on_report=lambda x: None, debug=False,
                  on_error=lambda x: None, auto_reconnect=False, max_reconnect_attempts=-1, reconnect_delay=5):
 
         self._on_connect, self._on_report, self._on_error = on_connect, on_report, on_error
@@ -22,6 +22,7 @@ class BeamInteractiveClient:
         self._reconnect_delay = reconnect_delay
         self._oauth = oauth
         self._timeout = timeout
+        self._debug = debug
         self._handlers = {
             proto.id.handshake_ack: asyncio.coroutine(on_connect),
             proto.id.report: asyncio.coroutine(on_report),
@@ -126,7 +127,11 @@ class BeamInteractiveClient:
             print("Couldn't connect to Beam - trying again in 5 seconds...")
             yield from asyncio.sleep(delay)
         try:
+            if self._debug:
+                print("Getting user data...")
             self.user_data = self._get_user_data()  # type: dict
+            if self._debug:
+                print("Retrieved.")
         except (KeyError, TypeError):
             raise InvalidAuthenticationError()
 
@@ -137,7 +142,11 @@ class BeamInteractiveClient:
         except (KeyError, ValueError):
             raise ConnectionFailedError(self.user_data["message"])
 
+        if self._debug:
+            print("Getting interactive connection info...")
         self.data = self._join_interactive()  # type: dict
+        if self._debug:
+            print("Retrieved.")
         self.connection = \
             yield from start(self.data["address"], self.channel_id, self.data["key"], self.loop)  # type: connection
         self._started = True
